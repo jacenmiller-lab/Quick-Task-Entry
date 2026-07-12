@@ -14,7 +14,6 @@
     --green: #2D7D46;
     --green-light: #E8F5EC;
     --red: #C0392B;
-    --red-light: #FDECEA;
     --gray-100: #F7F8FA;
     --gray-200: #EAECF0;
     --gray-400: #9AA3AF;
@@ -25,12 +24,13 @@
     --shadow: 0 2px 16px rgba(30,58,95,0.10);
   }
 
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--gray-100);
     color: var(--text);
     min-height: 100vh;
-    padding: 0;
   }
 
   header {
@@ -42,17 +42,8 @@
     z-index: 10;
   }
 
-  header h1 {
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: -0.3px;
-  }
-
-  header p {
-    font-size: 12px;
-    color: rgba(255,255,255,0.6);
-    margin-top: 2px;
-  }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+  header p { font-size: 12px; color: rgba(255,255,255,0.6); margin-top: 2px; }
 
   .setup-banner {
     background: #FFF8E7;
@@ -66,12 +57,7 @@
   }
 
   .setup-banner .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
-
-  .setup-banner a {
-    color: var(--blue);
-    font-weight: 600;
-    text-decoration: none;
-  }
+  .setup-banner a { color: var(--blue); font-weight: 600; text-decoration: none; }
 
   .config-section {
     background: var(--white);
@@ -96,22 +82,10 @@
     user-select: none;
   }
 
-  .config-header .toggle-icon {
-    font-size: 16px;
-    transition: transform 0.2s;
-  }
+  .config-header .toggle-icon { font-size: 16px; transition: transform 0.2s; }
+  .config-header.collapsed .toggle-icon { transform: rotate(-90deg); }
 
-  .config-header.collapsed .toggle-icon {
-    transform: rotate(-90deg);
-  }
-
-  .config-body {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
+  .config-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
   .config-body.hidden { display: none; }
 
   .form-section {
@@ -132,12 +106,7 @@
     text-transform: uppercase;
   }
 
-  .form-body {
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
+  .form-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 
   .field { display: flex; flex-direction: column; gap: 6px; }
 
@@ -183,6 +152,19 @@
     padding-right: 36px;
   }
 
+  select:disabled { opacity: 0.5; }
+
+  .dept-status {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: -2px;
+    min-height: 16px;
+  }
+
+  .dept-status.loading { color: var(--blue); }
+  .dept-status.error { color: var(--red); }
+  .dept-status.success { color: var(--green); }
+
   .priority-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -204,21 +186,13 @@
   }
 
   .priority-btn[data-value="High"].selected {
-    background: #FEF0EE;
-    border-color: #E05C4A;
-    color: #C0392B;
+    background: #FEF0EE; border-color: #E05C4A; color: var(--red);
   }
-
   .priority-btn[data-value="Medium"].selected {
-    background: #FFF8E7;
-    border-color: #F0C040;
-    color: #7A5F00;
+    background: #FFF8E7; border-color: #F0C040; color: #7A5F00;
   }
-
   .priority-btn[data-value="Low"].selected {
-    background: var(--green-light);
-    border-color: #4CAF76;
-    color: var(--green);
+    background: var(--green-light); border-color: #4CAF76; color: var(--green);
   }
 
   .submit-btn {
@@ -234,7 +208,6 @@
     letter-spacing: 0.3px;
     transition: background 0.15s, transform 0.1s;
     -webkit-appearance: none;
-    margin: 0 0 8px;
   }
 
   .submit-btn:active { transform: scale(0.98); background: #152c47; }
@@ -253,8 +226,6 @@
     -webkit-appearance: none;
     transition: all 0.15s;
   }
-
-  .clear-btn:active { background: var(--gray-100); }
 
   .btn-row {
     padding: 0 16px 24px;
@@ -281,14 +252,9 @@
   }
 
   .toast.error { background: var(--red); }
-
   .toast.show { transform: translateX(-50%) translateY(0); }
 
-  .field-hint {
-    font-size: 11px;
-    color: var(--gray-400);
-    margin-top: -2px;
-  }
+  .field-hint { font-size: 11px; color: var(--gray-400); margin-top: -2px; }
 
   .saved-badge {
     display: inline-flex;
@@ -333,17 +299,11 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--gray-200);
     font-size: 13px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
   }
 
   .queue-item:last-child { border-bottom: none; }
-
-  .queue-item-name { font-weight: 600; flex: 1; }
-
-  .queue-item-meta { color: var(--gray-400); font-size: 11px; }
+  .queue-item-name { font-weight: 600; }
+  .queue-item-meta { color: var(--gray-400); font-size: 11px; margin-top: 2px; }
 
   .queue-sync-btn {
     padding: 8px 14px;
@@ -367,7 +327,7 @@
 
 <div class="setup-banner" id="setupBanner">
   <span class="icon">⚙️</span>
-  <span>Enter your Notion API token and Database ID below to connect. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
+  <span>Enter your Notion credentials below to connect. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
 </div>
 
 <!-- Config Section -->
@@ -385,9 +345,17 @@
     <div class="field">
       <label>Tasks Database ID <span class="required">*</span></label>
       <input type="text" id="databaseId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
-      <span class="field-hint">From your Tasks database URL — the string after the last /</span>
+      <span class="field-hint">From your Tasks database URL</span>
     </div>
-    <div id="configSaved" class="saved-badge" style="display:none;">✅ Saved to this device</div>
+    <div class="field">
+      <label>Departments Database ID <span class="required">*</span></label>
+      <input type="text" id="deptDatabaseId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
+      <span class="field-hint">From your Departments database URL — used to load the Dept dropdown</span>
+    </div>
+    <button onclick="testAndSave()" style="padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+      Save & Load Departments
+    </button>
+    <div id="configSaved" class="saved-badge" style="display:none;">✅ Connected to Notion</div>
   </div>
 </div>
 
@@ -399,6 +367,14 @@
     <div class="field">
       <label>Task <span class="required">*</span></label>
       <input type="text" id="taskName" placeholder="e.g. Review Paint inventory levels" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Department</label>
+      <select id="deptSelect" disabled>
+        <option value="">— Loading departments... —</option>
+      </select>
+      <span class="dept-status" id="deptStatus"></span>
     </div>
 
     <div class="field">
@@ -456,30 +432,119 @@
 
 <script>
   let selectedPriority = 'Medium';
+  let departments = []; // { id, name }
   let offlineQueue = JSON.parse(localStorage.getItem('notionQueue') || '[]');
 
-  // Load saved config
   window.onload = function() {
     const token = localStorage.getItem('notionToken');
     const dbId = localStorage.getItem('notionDbId');
+    const deptDbId = localStorage.getItem('notionDeptDbId');
+
     if (token) document.getElementById('apiToken').value = token;
     if (dbId) document.getElementById('databaseId').value = dbId;
-    if (token && dbId) {
+    if (deptDbId) document.getElementById('deptDatabaseId').value = deptDbId;
+
+    if (token && dbId && deptDbId) {
       document.getElementById('setupBanner').style.display = 'none';
       document.getElementById('configSaved').style.display = 'inline-flex';
       collapseConfig();
+      loadDepartments();
     }
+
     updateQueueDisplay();
   };
 
   function saveConfig() {
     const token = document.getElementById('apiToken').value.trim();
     const dbId = document.getElementById('databaseId').value.trim();
+    const deptDbId = document.getElementById('deptDatabaseId').value.trim();
     if (token) localStorage.setItem('notionToken', token);
     if (dbId) localStorage.setItem('notionDbId', dbId);
-    if (token && dbId) {
+    if (deptDbId) localStorage.setItem('notionDeptDbId', deptDbId);
+  }
+
+  async function testAndSave() {
+    saveConfig();
+    const token = localStorage.getItem('notionToken');
+    const deptDbId = localStorage.getItem('notionDeptDbId');
+
+    if (!token || !deptDbId) {
+      showToast('Fill in all three fields first', true);
+      return;
+    }
+
+    document.getElementById('configSaved').style.display = 'none';
+    const result = await loadDepartments();
+
+    if (result) {
       document.getElementById('setupBanner').style.display = 'none';
       document.getElementById('configSaved').style.display = 'inline-flex';
+      collapseConfig();
+    }
+  }
+
+  async function loadDepartments() {
+    const token = localStorage.getItem('notionToken');
+    const deptDbId = localStorage.getItem('notionDeptDbId');
+    if (!token || !deptDbId) return false;
+
+    const select = document.getElementById('deptSelect');
+    const status = document.getElementById('deptStatus');
+
+    select.disabled = true;
+    status.className = 'dept-status loading';
+    status.textContent = 'Loading departments from Notion...';
+
+    try {
+      const res = await fetch(`https://api.notion.com/v1/databases/${deptDbId.replace(/-/g,'')}/query`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify({ sorts: [{ property: 'Dept', direction: 'ascending' }] })
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        status.className = 'dept-status error';
+        status.textContent = 'Error: ' + (err.message || 'Check your Departments Database ID');
+        select.innerHTML = '<option value="">— Failed to load —</option>';
+        return false;
+      }
+
+      const data = await res.json();
+      departments = [];
+
+      data.results.forEach(page => {
+        const titleProp = page.properties?.Dept || page.properties?.Name;
+        const name = titleProp?.title?.[0]?.plain_text || titleProp?.rich_text?.[0]?.plain_text || '';
+        if (name) departments.push({ id: page.id, name });
+      });
+
+      // Sort alphabetically
+      departments.sort((a, b) => a.name.localeCompare(b.name));
+
+      select.innerHTML = '<option value="">— Select department —</option>';
+      departments.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.name;
+        select.appendChild(opt);
+      });
+
+      select.disabled = false;
+      status.className = 'dept-status success';
+      status.textContent = `✓ ${departments.length} departments loaded`;
+      setTimeout(() => { status.textContent = ''; }, 3000);
+      return true;
+
+    } catch(e) {
+      status.className = 'dept-status error';
+      status.textContent = 'Could not reach Notion — check connection';
+      select.innerHTML = '<option value="">— Unavailable offline —</option>';
+      return false;
     }
   }
 
@@ -511,6 +576,7 @@
 
   function clearForm() {
     document.getElementById('taskName').value = '';
+    document.getElementById('deptSelect').value = '';
     document.getElementById('category').value = '';
     document.getElementById('notes').value = '';
     document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
@@ -523,6 +589,7 @@
     const token = localStorage.getItem('notionToken');
     const dbId = localStorage.getItem('notionDbId');
     const taskName = document.getElementById('taskName').value.trim();
+    const deptId = document.getElementById('deptSelect').value;
     const category = document.getElementById('category').value;
     const notes = document.getElementById('notes').value.trim();
 
@@ -537,48 +604,13 @@
       parent: { database_id: dbId.replace(/-/g, '') },
       properties: {
         Task: { title: [{ text: { content: taskName } }] },
+        ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
         ...(category && { Category: { select: { name: category } } }),
         ...(selectedPriority && { Priority: { select: { name: selectedPriority } } }),
         ...(notes && { Notes: { rich_text: [{ text: { content: notes } }] } }),
       }
     };
 
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `Make a POST request to the Notion API to create a task. Use this exact payload: ${JSON.stringify(payload)}. The Notion API token is: ${token}. Make the request to https://api.notion.com/v1/pages with headers Content-Type: application/json, Authorization: Bearer ${token}, Notion-Version: 2022-06-28. Return only "SUCCESS" if the request returns a 200 status, or "ERROR: " followed by the error message if it fails.`
-          }]
-        })
-      });
-
-      const data = await res.json();
-      const responseText = data.content?.[0]?.text || '';
-
-      if (responseText.includes('SUCCESS')) {
-        showToast('✅ Task added to Notion');
-        clearForm();
-      } else {
-        // Try direct Notion API
-        await directNotionCall(payload, token);
-      }
-    } catch(e) {
-      // Fallback: save to offline queue
-      saveToQueue({ taskName, category, priority: selectedPriority, notes, timestamp: new Date().toISOString() });
-      showToast('📥 Saved offline — sync when connected');
-      clearForm();
-    }
-
-    btn.disabled = false;
-    btn.textContent = 'Add to Notion';
-  }
-
-  async function directNotionCall(payload, token) {
     try {
       const res = await fetch('https://api.notion.com/v1/pages', {
         method: 'POST',
@@ -595,16 +627,45 @@
         clearForm();
       } else {
         const err = await res.json();
-        showToast('Error: ' + (err.message || 'Check your token and database ID'), true);
+        // Property name mismatch is common — try without Dept if that's the issue
+        if (err.message && err.message.includes('Dept') && deptId) {
+          await submitWithoutDept(payload, token);
+        } else {
+          showToast('Error: ' + (err.message || 'Check token and database ID'), true);
+        }
       }
     } catch(e) {
-      saveToQueue({ taskName: payload.properties.Task.title[0].text.content, timestamp: new Date().toISOString() });
+      saveToQueue({ taskName, deptId, deptName: document.getElementById('deptSelect').options[document.getElementById('deptSelect').selectedIndex]?.text || '', category, priority: selectedPriority, notes, timestamp: new Date().toISOString() });
       showToast('📥 Saved offline — sync when connected');
       clearForm();
     }
 
-    document.getElementById('submitBtn').disabled = false;
-    document.getElementById('submitBtn').textContent = 'Add to Notion';
+    btn.disabled = false;
+    btn.textContent = 'Add to Notion';
+  }
+
+  async function submitWithoutDept(payload, token) {
+    // Retry without Dept relation in case property name differs
+    const fallback = { ...payload, properties: { ...payload.properties } };
+    delete fallback.properties.Dept;
+
+    const res = await fetch('https://api.notion.com/v1/pages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Notion-Version': '2022-06-28'
+      },
+      body: JSON.stringify(fallback)
+    });
+
+    if (res.ok) {
+      showToast('✅ Task added (assign Dept in Notion)');
+      clearForm();
+    } else {
+      const err = await res.json();
+      showToast('Error: ' + (err.message || 'Check property names match your database'), true);
+    }
   }
 
   function saveToQueue(task) {
@@ -618,19 +679,14 @@
     const list = document.getElementById('queueList');
     const count = document.getElementById('queueCount');
 
-    if (offlineQueue.length === 0) {
-      section.style.display = 'none';
-      return;
-    }
+    if (offlineQueue.length === 0) { section.style.display = 'none'; return; }
 
     section.style.display = 'block';
     count.textContent = offlineQueue.length;
-    list.innerHTML = offlineQueue.map((t, i) => `
+    list.innerHTML = offlineQueue.map(t => `
       <div class="queue-item">
-        <div>
-          <div class="queue-item-name">${t.taskName}</div>
-          <div class="queue-item-meta">${t.category || 'No category'} · ${t.priority || 'Medium'} · ${new Date(t.timestamp).toLocaleDateString()}</div>
-        </div>
+        <div class="queue-item-name">${t.taskName}</div>
+        <div class="queue-item-meta">${t.deptName || 'No dept'} · ${t.category || 'No category'} · ${t.priority || 'Medium'} · ${new Date(t.timestamp).toLocaleDateString()}</div>
       </div>
     `).join('');
   }
@@ -649,6 +705,7 @@
           parent: { database_id: dbId.replace(/-/g, '') },
           properties: {
             Task: { title: [{ text: { content: task.taskName } }] },
+            ...(task.deptId && { Dept: { relation: [{ id: task.deptId }] } }),
             ...(task.category && { Category: { select: { name: task.category } } }),
             ...(task.priority && { Priority: { select: { name: task.priority } } }),
             ...(task.notes && { Notes: { rich_text: [{ text: { content: task.notes } }] } }),
@@ -667,9 +724,7 @@
 
         if (res.ok) synced++;
         else remaining.push(task);
-      } catch(e) {
-        remaining.push(task);
-      }
+      } catch(e) { remaining.push(task); }
     }
 
     offlineQueue = remaining;
