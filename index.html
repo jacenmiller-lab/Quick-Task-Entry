@@ -118,6 +118,7 @@
 
   input[type="text"],
   input[type="password"],
+  input[type="date"],
   textarea,
   select {
     width: 100%;
@@ -146,6 +147,23 @@
     background-repeat: no-repeat;
     background-position: right 14px center;
     padding-right: 36px;
+  }
+
+  .date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .date-field { display: flex; flex-direction: column; gap: 6px; }
+
+  .assigned-date-display {
+    padding: 12px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 15px;
+    color: var(--gray-400);
+    background: var(--gray-100);
   }
 
   .priority-row {
@@ -281,17 +299,55 @@
     padding: 12px 16px;
     border-bottom: 1px solid var(--gray-200);
     font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
   }
 
   .queue-item:last-child { border-bottom: none; }
+  .queue-item-info { flex: 1; }
   .queue-item-name { font-weight: 600; }
   .queue-item-meta { color: var(--gray-400); font-size: 11px; margin-top: 2px; }
+
+  .queue-delete-btn {
+    padding: 6px 10px;
+    background: transparent;
+    color: var(--red);
+    border: 1.5px solid #FFCDD2;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    flex-shrink: 0;
+  }
+
+  .queue-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--gray-200);
+    display: flex;
+    gap: 8px;
+  }
 
   .queue-sync-btn {
     padding: 8px 14px;
     background: var(--blue);
     color: white;
     border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    flex: 1;
+  }
+
+  .queue-clear-btn {
+    padding: 8px 14px;
+    background: transparent;
+    color: var(--red);
+    border: 1.5px solid #FFCDD2;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
@@ -395,6 +451,17 @@
       </div>
     </div>
 
+    <div class="date-row">
+      <div class="date-field">
+        <label>Assigned Date</label>
+        <div class="assigned-date-display" id="assignedDateDisplay"></div>
+      </div>
+      <div class="date-field">
+        <label>Due Date</label>
+        <input type="date" id="dueDate">
+      </div>
+    </div>
+
     <div class="field">
       <label>Notes</label>
       <textarea id="notes" placeholder="Context from your department walk, what you observed, what needs to happen..."></textarea>
@@ -409,14 +476,15 @@
     <span class="queue-count" id="queueCount">0</span>
   </div>
   <div id="queueList"></div>
-  <div style="padding: 12px 16px; border-top: 1px solid var(--gray-200);">
-    <button class="queue-sync-btn" onclick="syncQueue()">Sync All to Notion</button>
+  <div class="queue-footer">
+    <button class="queue-sync-btn" onclick="syncQueue()">Sync All</button>
+    <button class="queue-clear-btn" onclick="clearQueue()">Clear All</button>
   </div>
 </div>
 
 <div class="btn-row">
   <button class="submit-btn" id="submitBtn" onclick="submitTask()">Add to Notion</button>
-  <button class="clear-btn" onclick="clearForm()">Clear</button>
+  <button class="clear-btn" onclick="clearForm()">Clear Form</button>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -425,32 +493,38 @@
   const PROXY_URL = 'https://notion-proxy.jacenmiller.workers.dev/';
   let selectedPriority = 'Medium';
   let offlineQueue = JSON.parse(localStorage.getItem('notionQueue') || '[]');
+  let todayISO = '';
 
-  // Dept name → Notion page ID
-  // Fill these in with your actual department page IDs from Notion
   const DEPT_IDS = {
-    "B&K": "",
-    "Building Materials": "",
-    "Company": "",
-    "Construction": "",
-    "D&W": "",
-    "Decor": "",
-    "Electrical": "",
-    "Garden": "",
-    "Hardware": "",
-    "Home Org": "",
-    "Library": "",
-    "Lighting": "",
-    "Livegoods": "",
-    "Lumber": "",
-    "Paint": "",
-    "Plumbing": "",
-    "Promo": "",
-    "Seasonal": "",
-    "Tools": ""
+    "Paint":              "365eeb7cb4388064adc4e80aeee6e52d",
+    "Tools":              "365eeb7cb4388085ab53fac61587b1b6",
+    "Electrical":         "365eeb7cb43880728333c1a579915a42",
+    "Plumbing":           "365eeb7cb43880a6986fc3634380994a",
+    "Hardware":           "365eeb7cb43880648b9eef2bde84a3ee",
+    "Lumber":             "365eeb7cb438808bbda5e41559be7105",
+    "Building Materials": "365eeb7cb43880ab876bd04c2d06c234",
+    "D&W":                "365eeb7cb43880b4a291ec93f40e85b1",
+    "Decor":              "365eeb7cb43880cca07dfdff6876b85c",
+    "Garden":             "365eeb7cb438808585c1f75c1f7573e8",
+    "Lighting":           "365eeb7cb4388073b953e7f2e3e43d4b",
+    "B&K":                "365eeb7cb43880159127d636b95ad0b3",
+    "Construction":       "365eeb7cb4388034b254f921316cecab",
+    "Home Org":           "365eeb7cb4388046917bffe30e659612",
+    "Seasonal":           "365eeb7cb438800584e9cfabb9fc5db9",
+    "Livegoods":          "365eeb7cb438806186d3fe23b25ad225",
+    "Library":            "365eeb7cb43880f6bb58dff3e21ac41c",
+    "Promo":              "365eeb7cb4388092a91ee79b51a70b6b",
+    "Company":            "396eeb7cb43880e5b401ff53e21dc298"
   };
 
   window.onload = function() {
+    // Set today's date
+    const today = new Date();
+    todayISO = today.toISOString().split('T')[0];
+    const display = today.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    document.getElementById('assignedDateDisplay').textContent = display;
+
+    // Load saved credentials
     const token = localStorage.getItem('notionToken');
     const dbId = localStorage.getItem('notionDbId');
     if (token) document.getElementById('apiToken').value = token;
@@ -503,6 +577,7 @@
     document.getElementById('taskName').value = '';
     document.getElementById('deptSelect').value = '';
     document.getElementById('category').value = '';
+    document.getElementById('dueDate').value = '';
     document.getElementById('notes').value = '';
     document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
     document.querySelector('.priority-btn[data-value="Medium"]').classList.add('selected');
@@ -510,7 +585,7 @@
     document.getElementById('taskName').focus();
   }
 
-  function buildPayload(dbId, taskName, deptName, category, priority, notes) {
+  function buildPayload(dbId, taskName, deptName, category, priority, assignedDate, dueDate, notes) {
     const deptId = DEPT_IDS[deptName];
     return {
       parent: { database_id: dbId.replace(/-/g, '') },
@@ -519,6 +594,8 @@
         ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
         ...(category && { Category: { select: { name: category } } }),
         ...(priority && { Priority: { select: { name: priority } } }),
+        ...(assignedDate && { "Assigned Date": { date: { start: assignedDate } } }),
+        ...(dueDate && { "Due Date": { date: { start: dueDate } } }),
         ...(notes && { Notes: { rich_text: [{ text: { content: notes } }] } }),
       }
     };
@@ -540,6 +617,7 @@
     const taskName = document.getElementById('taskName').value.trim();
     const deptName = document.getElementById('deptSelect').value;
     const category = document.getElementById('category').value;
+    const dueDate = document.getElementById('dueDate').value;
     const notes = document.getElementById('notes').value.trim();
 
     if (!taskName) { showToast('Enter a task name first', true); return; }
@@ -549,7 +627,7 @@
     btn.disabled = true;
     btn.textContent = 'Adding...';
 
-    const payload = buildPayload(dbId, taskName, deptName, category, selectedPriority, notes);
+    const payload = buildPayload(dbId, taskName, deptName, category, selectedPriority, todayISO, dueDate, notes);
 
     try {
       const res = await callNotion('pages', payload);
@@ -562,7 +640,7 @@
         showToast('Error: ' + (data.message || 'Check your token and database ID'), true);
       }
     } catch(e) {
-      saveToQueue({ taskName, deptName, category, priority: selectedPriority, notes, timestamp: new Date().toISOString() });
+      saveToQueue({ taskName, deptName, category, priority: selectedPriority, assignedDate: todayISO, dueDate, notes, timestamp: new Date().toISOString() });
       showToast('📥 Saved offline — sync when connected');
       clearForm();
     }
@@ -577,6 +655,21 @@
     updateQueueDisplay();
   }
 
+  function deleteQueueItem(index) {
+    offlineQueue.splice(index, 1);
+    localStorage.setItem('notionQueue', JSON.stringify(offlineQueue));
+    updateQueueDisplay();
+    showToast('Item removed');
+  }
+
+  function clearQueue() {
+    if (offlineQueue.length === 0) return;
+    offlineQueue = [];
+    localStorage.setItem('notionQueue', JSON.stringify(offlineQueue));
+    updateQueueDisplay();
+    showToast('Queue cleared');
+  }
+
   function updateQueueDisplay() {
     const section = document.getElementById('queueSection');
     const list = document.getElementById('queueList');
@@ -584,10 +677,13 @@
     if (offlineQueue.length === 0) { section.style.display = 'none'; return; }
     section.style.display = 'block';
     count.textContent = offlineQueue.length;
-    list.innerHTML = offlineQueue.map(t => `
+    list.innerHTML = offlineQueue.map((t, i) => `
       <div class="queue-item">
-        <div class="queue-item-name">${t.taskName}</div>
-        <div class="queue-item-meta">${t.deptName || 'No dept'} · ${t.category || 'No category'} · ${t.priority || 'Medium'} · ${new Date(t.timestamp).toLocaleDateString()}</div>
+        <div class="queue-item-info">
+          <div class="queue-item-name">${t.taskName}</div>
+          <div class="queue-item-meta">${t.deptName || 'No dept'} · ${t.category || 'No category'} · ${t.priority || 'Medium'}${t.dueDate ? ' · Due ' + t.dueDate : ''}</div>
+        </div>
+        <button class="queue-delete-btn" onclick="deleteQueueItem(${i})">Delete</button>
       </div>
     `).join('');
   }
@@ -601,7 +697,7 @@
 
     for (const task of offlineQueue) {
       try {
-        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.priority, task.notes);
+        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.priority, task.assignedDate, task.dueDate, task.notes);
         const res = await callNotion('pages', payload);
         if (res.ok) synced++;
         else remaining.push(task);
