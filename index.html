@@ -10,7 +10,6 @@
   :root {
     --navy: #1E3A5F;
     --blue: #2E6DA4;
-    --blue-light: #EBF2FA;
     --green: #2D7D46;
     --green-light: #E8F5EC;
     --red: #C0392B;
@@ -23,8 +22,6 @@
     --radius: 12px;
     --shadow: 0 2px 16px rgba(30,58,95,0.10);
   }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -107,7 +104,6 @@
   }
 
   .form-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-
   .field { display: flex; flex-direction: column; gap: 6px; }
 
   label {
@@ -151,19 +147,6 @@
     background-position: right 14px center;
     padding-right: 36px;
   }
-
-  select:disabled { opacity: 0.5; }
-
-  .dept-status {
-    font-size: 11px;
-    color: var(--gray-400);
-    margin-top: -2px;
-    min-height: 16px;
-  }
-
-  .dept-status.loading { color: var(--blue); }
-  .dept-status.error { color: var(--red); }
-  .dept-status.success { color: var(--green); }
 
   .priority-row {
     display: grid;
@@ -263,7 +246,6 @@
     font-size: 11px;
     color: var(--green);
     font-weight: 600;
-    margin-top: 4px;
   }
 
   .queue-section {
@@ -316,6 +298,19 @@
     cursor: pointer;
     -webkit-appearance: none;
   }
+
+  .cors-notice {
+    margin: 0 16px 16px;
+    background: var(--blue);
+    color: white;
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    font-size: 12px;
+    line-height: 1.5;
+    display: none;
+  }
+
+  .cors-notice strong { display: block; margin-bottom: 4px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -327,7 +322,7 @@
 
 <div class="setup-banner" id="setupBanner">
   <span class="icon">⚙️</span>
-  <span>Enter your Notion credentials below to connect. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
+  <span>Enter your Notion API token and Tasks Database ID below. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
 </div>
 
 <!-- Config Section -->
@@ -339,24 +334,25 @@
   <div class="config-body" id="configBody">
     <div class="field">
       <label>API Token <span class="required">*</span></label>
-      <input type="password" id="apiToken" placeholder="secret_xxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
+      <input type="password" id="apiToken" placeholder="secret_xxxxxxxxxxxx" autocomplete="off">
       <span class="field-hint">From notion.so/my-integrations — stored locally on this device only</span>
     </div>
     <div class="field">
       <label>Tasks Database ID <span class="required">*</span></label>
-      <input type="text" id="databaseId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
-      <span class="field-hint">From your Tasks database URL</span>
+      <input type="text" id="databaseId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+      <span class="field-hint">From your Tasks database URL — the string after the last /</span>
     </div>
-    <div class="field">
-      <label>Departments Database ID <span class="required">*</span></label>
-      <input type="text" id="deptDatabaseId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
-      <span class="field-hint">From your Departments database URL — used to load the Dept dropdown</span>
-    </div>
-    <button onclick="testAndSave()" style="padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
-      Save & Load Departments
+    <button onclick="saveAndConnect()" style="padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
+      Save & Connect
     </button>
-    <div id="configSaved" class="saved-badge" style="display:none;">✅ Connected to Notion</div>
+    <div id="configSaved" class="saved-badge" style="display:none;">✅ Connected — tap form below to add tasks</div>
   </div>
+</div>
+
+<!-- CORS notice shown if submission fails -->
+<div class="cors-notice" id="corsNotice">
+  <strong>⚠️ Connection blocked by browser security</strong>
+  Tasks are being saved offline. Open this file through a web server or hosted URL to enable direct Notion sync. Tasks in the queue below will sync once the connection works.
 </div>
 
 <!-- Task Form -->
@@ -371,10 +367,28 @@
 
     <div class="field">
       <label>Department</label>
-      <select id="deptSelect" disabled>
-        <option value="">— Loading departments... —</option>
+      <select id="deptSelect">
+        <option value="">— Select department —</option>
+        <option value="B&K">B&K</option>
+        <option value="Building Materials">Building Materials</option>
+        <option value="Company">Company</option>
+        <option value="Construction">Construction</option>
+        <option value="D&W">D&W</option>
+        <option value="Decor">Decor</option>
+        <option value="Electrical">Electrical</option>
+        <option value="Garden">Garden</option>
+        <option value="Hardware">Hardware</option>
+        <option value="Home Org">Home Org</option>
+        <option value="Library">Library</option>
+        <option value="Lighting">Lighting</option>
+        <option value="Livegoods">Livegoods</option>
+        <option value="Lumber">Lumber</option>
+        <option value="Paint">Paint</option>
+        <option value="Plumbing">Plumbing</option>
+        <option value="Promo">Promo</option>
+        <option value="Seasonal">Seasonal</option>
+        <option value="Tools">Tools</option>
       </select>
-      <span class="dept-status" id="deptStatus"></span>
     </div>
 
     <div class="field">
@@ -432,127 +446,61 @@
 
 <script>
   let selectedPriority = 'Medium';
-  let departments = []; // { id, name }
   let offlineQueue = JSON.parse(localStorage.getItem('notionQueue') || '[]');
+
+  // Dept name → Notion page ID mapping
+  // You will need to fill these in once you grab them from your Departments database URLs
+  // Each dept page ID comes from opening that dept record in Notion and copying the ID from the URL
+  const DEPT_IDS = {
+    "B&K": "",
+    "Building Materials": "",
+    "Company": "",
+    "Construction": "",
+    "D&W": "",
+    "Decor": "",
+    "Electrical": "",
+    "Garden": "",
+    "Hardware": "",
+    "Home Org": "",
+    "Library": "",
+    "Lighting": "",
+    "Livegoods": "",
+    "Lumber": "",
+    "Paint": "",
+    "Plumbing": "",
+    "Promo": "",
+    "Seasonal": "",
+    "Tools": ""
+  };
 
   window.onload = function() {
     const token = localStorage.getItem('notionToken');
     const dbId = localStorage.getItem('notionDbId');
-    const deptDbId = localStorage.getItem('notionDeptDbId');
-
     if (token) document.getElementById('apiToken').value = token;
     if (dbId) document.getElementById('databaseId').value = dbId;
-    if (deptDbId) document.getElementById('deptDatabaseId').value = deptDbId;
-
-    if (token && dbId && deptDbId) {
+    if (token && dbId) {
       document.getElementById('setupBanner').style.display = 'none';
       document.getElementById('configSaved').style.display = 'inline-flex';
       collapseConfig();
-      loadDepartments();
     }
-
     updateQueueDisplay();
   };
 
-  function saveConfig() {
+  function saveAndConnect() {
     const token = document.getElementById('apiToken').value.trim();
     const dbId = document.getElementById('databaseId').value.trim();
-    const deptDbId = document.getElementById('deptDatabaseId').value.trim();
-    if (token) localStorage.setItem('notionToken', token);
-    if (dbId) localStorage.setItem('notionDbId', dbId);
-    if (deptDbId) localStorage.setItem('notionDeptDbId', deptDbId);
-  }
-
-  async function testAndSave() {
-    saveConfig();
-    const token = localStorage.getItem('notionToken');
-    const deptDbId = localStorage.getItem('notionDeptDbId');
-
-    if (!token || !deptDbId) {
-      showToast('Fill in all three fields first', true);
-      return;
-    }
-
-    document.getElementById('configSaved').style.display = 'none';
-    const result = await loadDepartments();
-
-    if (result) {
-      document.getElementById('setupBanner').style.display = 'none';
-      document.getElementById('configSaved').style.display = 'inline-flex';
-      collapseConfig();
-    }
-  }
-
-  async function loadDepartments() {
-    const token = localStorage.getItem('notionToken');
-    const deptDbId = localStorage.getItem('notionDeptDbId');
-    if (!token || !deptDbId) return false;
-
-    const select = document.getElementById('deptSelect');
-    const status = document.getElementById('deptStatus');
-
-    select.disabled = true;
-    status.className = 'dept-status loading';
-    status.textContent = 'Loading departments from Notion...';
-
-    try {
-      const res = await fetch(`https://api.notion.com/v1/databases/${deptDbId.replace(/-/g,'')}/query`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Notion-Version': '2022-06-28'
-        },
-        body: JSON.stringify({ sorts: [{ property: 'Dept', direction: 'ascending' }] })
-      });
-
-      if (!res.ok) {
-        const err = await res.json();
-        status.className = 'dept-status error';
-        status.textContent = 'Error: ' + (err.message || 'Check your Departments Database ID');
-        select.innerHTML = '<option value="">— Failed to load —</option>';
-        return false;
-      }
-
-      const data = await res.json();
-      departments = [];
-
-      data.results.forEach(page => {
-        const titleProp = page.properties?.Dept || page.properties?.Name;
-        const name = titleProp?.title?.[0]?.plain_text || titleProp?.rich_text?.[0]?.plain_text || '';
-        if (name) departments.push({ id: page.id, name });
-      });
-
-      // Sort alphabetically
-      departments.sort((a, b) => a.name.localeCompare(b.name));
-
-      select.innerHTML = '<option value="">— Select department —</option>';
-      departments.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d.id;
-        opt.textContent = d.name;
-        select.appendChild(opt);
-      });
-
-      select.disabled = false;
-      status.className = 'dept-status success';
-      status.textContent = `✓ ${departments.length} departments loaded`;
-      setTimeout(() => { status.textContent = ''; }, 3000);
-      return true;
-
-    } catch(e) {
-      status.className = 'dept-status error';
-      status.textContent = 'Could not reach Notion — check connection';
-      select.innerHTML = '<option value="">— Unavailable offline —</option>';
-      return false;
-    }
+    if (!token || !dbId) { showToast('Fill in both fields first', true); return; }
+    localStorage.setItem('notionToken', token);
+    localStorage.setItem('notionDbId', dbId);
+    document.getElementById('setupBanner').style.display = 'none';
+    document.getElementById('configSaved').style.display = 'inline-flex';
+    collapseConfig();
+    showToast('✅ Credentials saved');
   }
 
   function toggleConfig() {
-    const body = document.getElementById('configBody');
-    const header = document.getElementById('configToggle');
-    body.classList.toggle('hidden');
-    header.classList.toggle('collapsed');
+    document.getElementById('configBody').classList.toggle('hidden');
+    document.getElementById('configToggle').classList.toggle('collapsed');
   }
 
   function collapseConfig() {
@@ -585,11 +533,25 @@
     document.getElementById('taskName').focus();
   }
 
+  function buildPayload(dbId, taskName, deptName, category, notes) {
+    const deptId = DEPT_IDS[deptName];
+    return {
+      parent: { database_id: dbId.replace(/-/g, '') },
+      properties: {
+        Task: { title: [{ text: { content: taskName } }] },
+        ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
+        ...(category && { Category: { select: { name: category } } }),
+        ...(selectedPriority && { Priority: { select: { name: selectedPriority } } }),
+        ...(notes && { Notes: { rich_text: [{ text: { content: notes } }] } }),
+      }
+    };
+  }
+
   async function submitTask() {
     const token = localStorage.getItem('notionToken');
     const dbId = localStorage.getItem('notionDbId');
     const taskName = document.getElementById('taskName').value.trim();
-    const deptId = document.getElementById('deptSelect').value;
+    const deptName = document.getElementById('deptSelect').value;
     const category = document.getElementById('category').value;
     const notes = document.getElementById('notes').value.trim();
 
@@ -600,16 +562,7 @@
     btn.disabled = true;
     btn.textContent = 'Adding...';
 
-    const payload = {
-      parent: { database_id: dbId.replace(/-/g, '') },
-      properties: {
-        Task: { title: [{ text: { content: taskName } }] },
-        ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
-        ...(category && { Category: { select: { name: category } } }),
-        ...(selectedPriority && { Priority: { select: { name: selectedPriority } } }),
-        ...(notes && { Notes: { rich_text: [{ text: { content: notes } }] } }),
-      }
-    };
+    const payload = buildPayload(dbId, taskName, deptName, category, notes);
 
     try {
       const res = await fetch('https://api.notion.com/v1/pages', {
@@ -627,45 +580,25 @@
         clearForm();
       } else {
         const err = await res.json();
-        // Property name mismatch is common — try without Dept if that's the issue
-        if (err.message && err.message.includes('Dept') && deptId) {
-          await submitWithoutDept(payload, token);
-        } else {
-          showToast('Error: ' + (err.message || 'Check token and database ID'), true);
-        }
+        showToast('Error: ' + (err.message || 'Check token and database ID'), true);
       }
     } catch(e) {
-      saveToQueue({ taskName, deptId, deptName: document.getElementById('deptSelect').options[document.getElementById('deptSelect').selectedIndex]?.text || '', category, priority: selectedPriority, notes, timestamp: new Date().toISOString() });
+      // CORS or network failure — save offline
+      document.getElementById('corsNotice').style.display = 'block';
+      saveToQueue({
+        taskName,
+        deptName,
+        category,
+        priority: selectedPriority,
+        notes,
+        timestamp: new Date().toISOString()
+      });
       showToast('📥 Saved offline — sync when connected');
       clearForm();
     }
 
     btn.disabled = false;
     btn.textContent = 'Add to Notion';
-  }
-
-  async function submitWithoutDept(payload, token) {
-    // Retry without Dept relation in case property name differs
-    const fallback = { ...payload, properties: { ...payload.properties } };
-    delete fallback.properties.Dept;
-
-    const res = await fetch('https://api.notion.com/v1/pages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-        'Notion-Version': '2022-06-28'
-      },
-      body: JSON.stringify(fallback)
-    });
-
-    if (res.ok) {
-      showToast('✅ Task added (assign Dept in Notion)');
-      clearForm();
-    } else {
-      const err = await res.json();
-      showToast('Error: ' + (err.message || 'Check property names match your database'), true);
-    }
   }
 
   function saveToQueue(task) {
@@ -678,9 +611,7 @@
     const section = document.getElementById('queueSection');
     const list = document.getElementById('queueList');
     const count = document.getElementById('queueCount');
-
     if (offlineQueue.length === 0) { section.style.display = 'none'; return; }
-
     section.style.display = 'block';
     count.textContent = offlineQueue.length;
     list.innerHTML = offlineQueue.map(t => `
@@ -701,16 +632,9 @@
 
     for (const task of offlineQueue) {
       try {
-        const payload = {
-          parent: { database_id: dbId.replace(/-/g, '') },
-          properties: {
-            Task: { title: [{ text: { content: task.taskName } }] },
-            ...(task.deptId && { Dept: { relation: [{ id: task.deptId }] } }),
-            ...(task.category && { Category: { select: { name: task.category } } }),
-            ...(task.priority && { Priority: { select: { name: task.priority } } }),
-            ...(task.notes && { Notes: { rich_text: [{ text: { content: task.notes } }] } }),
-          }
-        };
+        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.notes);
+        // Override priority from stored task
+        if (task.priority) payload.properties.Priority = { select: { name: task.priority } };
 
         const res = await fetch('https://api.notion.com/v1/pages', {
           method: 'POST',
@@ -730,6 +654,7 @@
     offlineQueue = remaining;
     localStorage.setItem('notionQueue', JSON.stringify(offlineQueue));
     updateQueueDisplay();
+    if (remaining.length === 0) document.getElementById('corsNotice').style.display = 'none';
     showToast(`✅ Synced ${synced} task${synced !== 1 ? 's' : ''} to Notion`);
   }
 </script>
