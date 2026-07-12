@@ -298,19 +298,6 @@
     cursor: pointer;
     -webkit-appearance: none;
   }
-
-  .cors-notice {
-    margin: 0 16px 16px;
-    background: var(--blue);
-    color: white;
-    padding: 12px 16px;
-    border-radius: var(--radius);
-    font-size: 12px;
-    line-height: 1.5;
-    display: none;
-  }
-
-  .cors-notice strong { display: block; margin-bottom: 4px; font-size: 13px; }
 </style>
 </head>
 <body>
@@ -322,10 +309,9 @@
 
 <div class="setup-banner" id="setupBanner">
   <span class="icon">⚙️</span>
-  <span>Enter your Notion API token and Tasks Database ID below. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
+  <span>Enter your Notion API token and Tasks Database ID to connect. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
 </div>
 
-<!-- Config Section -->
 <div class="config-section">
   <div class="config-header" id="configToggle" onclick="toggleConfig()">
     <span>🔑 Notion Connection</span>
@@ -345,17 +331,10 @@
     <button onclick="saveAndConnect()" style="padding:10px;background:var(--blue);color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">
       Save & Connect
     </button>
-    <div id="configSaved" class="saved-badge" style="display:none;">✅ Connected — tap form below to add tasks</div>
+    <div id="configSaved" class="saved-badge" style="display:none;">✅ Connected — ready to add tasks</div>
   </div>
 </div>
 
-<!-- CORS notice shown if submission fails -->
-<div class="cors-notice" id="corsNotice">
-  <strong>⚠️ Connection blocked by browser security</strong>
-  Tasks are being saved offline. Open this file through a web server or hosted URL to enable direct Notion sync. Tasks in the queue below will sync once the connection works.
-</div>
-
-<!-- Task Form -->
 <div class="form-section">
   <div class="form-header">📋 New Task</div>
   <div class="form-body">
@@ -424,7 +403,6 @@
   </div>
 </div>
 
-<!-- Offline Queue -->
 <div class="queue-section" id="queueSection">
   <div class="queue-header">
     <span>📤 Pending Sync</span>
@@ -436,7 +414,6 @@
   </div>
 </div>
 
-<!-- Buttons -->
 <div class="btn-row">
   <button class="submit-btn" id="submitBtn" onclick="submitTask()">Add to Notion</button>
   <button class="clear-btn" onclick="clearForm()">Clear</button>
@@ -445,12 +422,12 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  const PROXY_URL = 'https://notion-proxy.jacenmiller.workers.dev/';
   let selectedPriority = 'Medium';
   let offlineQueue = JSON.parse(localStorage.getItem('notionQueue') || '[]');
 
-  // Dept name → Notion page ID mapping
-  // You will need to fill these in once you grab them from your Departments database URLs
-  // Each dept page ID comes from opening that dept record in Notion and copying the ID from the URL
+  // Dept name → Notion page ID
+  // Fill these in with your actual department page IDs from Notion
   const DEPT_IDS = {
     "B&K": "",
     "Building Materials": "",
@@ -533,7 +510,7 @@
     document.getElementById('taskName').focus();
   }
 
-  function buildPayload(dbId, taskName, deptName, category, notes) {
+  function buildPayload(dbId, taskName, deptName, category, priority, notes) {
     const deptId = DEPT_IDS[deptName];
     return {
       parent: { database_id: dbId.replace(/-/g, '') },
@@ -541,10 +518,20 @@
         Task: { title: [{ text: { content: taskName } }] },
         ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
         ...(category && { Category: { select: { name: category } } }),
-        ...(selectedPriority && { Priority: { select: { name: selectedPriority } } }),
+        ...(priority && { Priority: { select: { name: priority } } }),
         ...(notes && { Notes: { rich_text: [{ text: { content: notes } }] } }),
       }
     };
+  }
+
+  async function callNotion(endpoint, payload) {
+    const token = localStorage.getItem('notionToken');
+    const res = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, endpoint, payload })
+    });
+    return res;
   }
 
   async function submitTask() {
@@ -562,37 +549,20 @@
     btn.disabled = true;
     btn.textContent = 'Adding...';
 
-    const payload = buildPayload(dbId, taskName, deptName, category, notes);
+    const payload = buildPayload(dbId, taskName, deptName, category, selectedPriority, notes);
 
     try {
-      const res = await fetch('https://api.notion.com/v1/pages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-          'Notion-Version': '2022-06-28'
-        },
-        body: JSON.stringify(payload)
-      });
+      const res = await callNotion('pages', payload);
+      const data = await res.json();
 
       if (res.ok) {
         showToast('✅ Task added to Notion');
         clearForm();
       } else {
-        const err = await res.json();
-        showToast('Error: ' + (err.message || 'Check token and database ID'), true);
+        showToast('Error: ' + (data.message || 'Check your token and database ID'), true);
       }
     } catch(e) {
-      // CORS or network failure — save offline
-      document.getElementById('corsNotice').style.display = 'block';
-      saveToQueue({
-        taskName,
-        deptName,
-        category,
-        priority: selectedPriority,
-        notes,
-        timestamp: new Date().toISOString()
-      });
+      saveToQueue({ taskName, deptName, category, priority: selectedPriority, notes, timestamp: new Date().toISOString() });
       showToast('📥 Saved offline — sync when connected');
       clearForm();
     }
@@ -623,29 +593,16 @@
   }
 
   async function syncQueue() {
-    const token = localStorage.getItem('notionToken');
     const dbId = localStorage.getItem('notionDbId');
-    if (!token || !dbId) { showToast('Set up Notion connection first', true); return; }
+    if (!dbId) { showToast('Set up Notion connection first', true); return; }
 
     let synced = 0;
     const remaining = [];
 
     for (const task of offlineQueue) {
       try {
-        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.notes);
-        // Override priority from stored task
-        if (task.priority) payload.properties.Priority = { select: { name: task.priority } };
-
-        const res = await fetch('https://api.notion.com/v1/pages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'Notion-Version': '2022-06-28'
-          },
-          body: JSON.stringify(payload)
-        });
-
+        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.priority, task.notes);
+        const res = await callNotion('pages', payload);
         if (res.ok) synced++;
         else remaining.push(task);
       } catch(e) { remaining.push(task); }
@@ -654,7 +611,6 @@
     offlineQueue = remaining;
     localStorage.setItem('notionQueue', JSON.stringify(offlineQueue));
     updateQueueDisplay();
-    if (remaining.length === 0) document.getElementById('corsNotice').style.display = 'none';
     showToast(`✅ Synced ${synced} task${synced !== 1 ? 's' : ''} to Notion`);
   }
 </script>
