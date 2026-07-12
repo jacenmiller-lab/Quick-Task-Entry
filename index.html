@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Quick Task Entry</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1E3A5F;
+    --blue: #2E6DA4;
+    --blue-light: #EBF2FA;
+    --green: #2D7D46;
+    --green-light: #E8F5EC;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --gray-100: #F7F8FA;
+    --gray-200: #EAECF0;
+    --gray-400: #9AA3AF;
+    --gray-700: #3D4652;
+    --white: #FFFFFF;
+    --text: #1A2130;
+    --radius: 12px;
+    --shadow: 0 2px 16px rgba(30,58,95,0.10);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--gray-100);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 20px 20px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+
+  header p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    margin-top: 2px;
+  }
+
+  .setup-banner {
+    background: #FFF8E7;
+    border-bottom: 2px solid #F0C040;
+    padding: 14px 20px;
+    font-size: 13px;
+    color: #7A5F00;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .setup-banner .icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  .setup-banner a {
+    color: var(--blue);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .config-section {
+    background: var(--white);
+    margin: 16px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .config-header {
+    background: var(--navy);
+    color: white;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .config-header .toggle-icon {
+    font-size: 16px;
+    transition: transform 0.2s;
+  }
+
+  .config-header.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+  }
+
+  .config-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .config-body.hidden { display: none; }
+
+  .form-section {
+    background: var(--white);
+    margin: 0 16px 16px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .form-header {
+    background: var(--blue);
+    color: white;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .form-body {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--gray-700);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  label .required { color: var(--red); margin-left: 2px; }
+
+  input[type="text"],
+  input[type="password"],
+  textarea,
+  select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--gray-100);
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color 0.15s, background 0.15s;
+    font-family: inherit;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--blue);
+    background: var(--white);
+  }
+
+  textarea { min-height: 90px; resize: vertical; line-height: 1.5; }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239AA3AF' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .priority-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .priority-btn {
+    padding: 10px 4px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    background: var(--gray-100);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-700);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-appearance: none;
+  }
+
+  .priority-btn[data-value="High"].selected {
+    background: #FEF0EE;
+    border-color: #E05C4A;
+    color: #C0392B;
+  }
+
+  .priority-btn[data-value="Medium"].selected {
+    background: #FFF8E7;
+    border-color: #F0C040;
+    color: #7A5F00;
+  }
+
+  .priority-btn[data-value="Low"].selected {
+    background: var(--green-light);
+    border-color: #4CAF76;
+    color: var(--green);
+  }
+
+  .submit-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-appearance: none;
+    margin: 0 0 8px;
+  }
+
+  .submit-btn:active { transform: scale(0.98); background: #152c47; }
+  .submit-btn:disabled { background: var(--gray-400); cursor: not-allowed; transform: none; }
+
+  .clear-btn {
+    width: 100%;
+    padding: 12px;
+    background: transparent;
+    color: var(--gray-400);
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+    transition: all 0.15s;
+  }
+
+  .clear-btn:active { background: var(--gray-100); }
+
+  .btn-row {
+    padding: 0 16px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--green);
+    color: white;
+    padding: 14px 24px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    z-index: 100;
+  }
+
+  .toast.error { background: var(--red); }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .field-hint {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: -2px;
+  }
+
+  .saved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--green);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+
+  .queue-section {
+    margin: 0 16px 16px;
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: none;
+  }
+
+  .queue-header {
+    background: var(--gray-700);
+    color: white;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .queue-count {
+    background: rgba(255,255,255,0.2);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 12px;
+  }
+
+  .queue-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--gray-200);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .queue-item:last-child { border-bottom: none; }
+
+  .queue-item-name { font-weight: 600; flex: 1; }
+
+  .queue-item-meta { color: var(--gray-400); font-size: 11px; }
+
+  .queue-sync-btn {
+    padding: 8px 14px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚡ Quick Task Entry</h1>
+  <p>Jerry's Home Improvement — Merchandising</p>
+</header>
+
+<div class="setup-banner" id="setupBanner">
+  <span class="icon">⚙️</span>
+  <span>Enter your Notion API token and Database ID below to connect. <a href="https://notion.so/my-integrations" target="_blank">Get your token →</a></span>
+</div>
+
+<!-- Config Section -->
+<div class="config-section">
+  <div class="config-header" id="configToggle" onclick="toggleConfig()">
+    <span>🔑 Notion Connection</span>
+    <span class="toggle-icon">▾</span>
+  </div>
+  <div class="config-body" id="configBody">
+    <div class="field">
+      <label>API Token <span class="required">*</span></label>
+      <input type="password" id="apiToken" placeholder="secret_xxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
+      <span class="field-hint">From notion.so/my-integrations — stored locally on this device only</span>
+    </div>
+    <div class="field">
+      <label>Tasks Database ID <span class="required">*</span></label>
+      <input type="text" id="databaseId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" oninput="saveConfig()">
+      <span class="field-hint">From your Tasks database URL — the string after the last /</span>
+    </div>
+    <div id="configSaved" class="saved-badge" style="display:none;">✅ Saved to this device</div>
+  </div>
+</div>
+
+<!-- Task Form -->
+<div class="form-section">
+  <div class="form-header">📋 New Task</div>
+  <div class="form-body">
+
+    <div class="field">
+      <label>Task <span class="required">*</span></label>
+      <input type="text" id="taskName" placeholder="e.g. Review Paint inventory levels" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <label>Category</label>
+      <select id="category">
+        <option value="">— Select category —</option>
+        <option value="Management">Management</option>
+        <option value="Sales">Sales</option>
+        <option value="Margin">Margin</option>
+        <option value="Inventory">Inventory</option>
+        <option value="Merchandising">Merchandising</option>
+        <option value="Advertising">Advertising</option>
+        <option value="Travel">Travel</option>
+        <option value="Vendor">Vendor</option>
+        <option value="Initiative">Initiative</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Priority</label>
+      <div class="priority-row">
+        <button class="priority-btn" data-value="High" onclick="selectPriority(this)">🔴 High</button>
+        <button class="priority-btn selected" data-value="Medium" onclick="selectPriority(this)">🟡 Medium</button>
+        <button class="priority-btn" data-value="Low" onclick="selectPriority(this)">🟢 Low</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Notes</label>
+      <textarea id="notes" placeholder="Context from your department walk, what you observed, what needs to happen..."></textarea>
+    </div>
+
+  </div>
+</div>
+
+<!-- Offline Queue -->
+<div class="queue-section" id="queueSection">
+  <div class="queue-header">
+    <span>📤 Pending Sync</span>
+    <span class="queue-count" id="queueCount">0</span>
+  </div>
+  <div id="queueList"></div>
+  <div style="padding: 12px 16px; border-top: 1px solid var(--gray-200);">
+    <button class="queue-sync-btn" onclick="syncQueue()">Sync All to Notion</button>
+  </div>
+</div>
+
+<!-- Buttons -->
+<div class="btn-row">
+  <button class="submit-btn" id="submitBtn" onclick="submitTask()">Add to Notion</button>
+  <button class="clear-btn" onclick="clearForm()">Clear</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let selectedPriority = 'Medium';
+  let offlineQueue = JSON.parse(localStorage.getItem('notionQueue') || '[]');
+
+  // Load saved config
+  window.onload = function() {
+    const token = localStorage.getItem('notionToken');
+    const dbId = localStorage.getItem('notionDbId');
+    if (token) document.getElementById('apiToken').value = token;
+    if (dbId) document.getElementById('databaseId').value = dbId;
+    if (token && dbId) {
+      document.getElementById('setupBanner').style.display = 'none';
+      document.getElementById('configSaved').style.display = 'inline-flex';
+      collapseConfig();
+    }
+    updateQueueDisplay();
+  };
+
+  function saveConfig() {
+    const token = document.getElementById('apiToken').value.trim();
+    const dbId = document.getElementById('databaseId').value.trim();
+    if (token) localStorage.setItem('notionToken', token);
+    if (dbId) localStorage.setItem('notionDbId', dbId);
+    if (token && dbId) {
+      document.getElementById('setupBanner').style.display = 'none';
+      document.getElementById('configSaved').style.display = 'inline-flex';
+    }
+  }
+
+  function toggleConfig() {
+    const body = document.getElementById('configBody');
+    const header = document.getElementById('configToggle');
+    body.classList.toggle('hidden');
+    header.classList.toggle('collapsed');
+  }
+
+  function collapseConfig() {
+    document.getElementById('configBody').classList.add('hidden');
+    document.getElementById('configToggle').classList.add('collapsed');
+  }
+
+  function selectPriority(btn) {
+    document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedPriority = btn.dataset.value;
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast' + (isError ? ' error' : '');
+    setTimeout(() => t.classList.add('show'), 10);
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function clearForm() {
+    document.getElementById('taskName').value = '';
+    document.getElementById('category').value = '';
+    document.getElementById('notes').value = '';
+    document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
+    document.querySelector('.priority-btn[data-value="Medium"]').classList.add('selected');
+    selectedPriority = 'Medium';
+    document.getElementById('taskName').focus();
+  }
+
+  async function submitTask() {
+    const token = localStorage.getItem('notionToken');
+    const dbId = localStorage.getItem('notionDbId');
+    const taskName = document.getElementById('taskName').value.trim();
+    const category = document.getElementById('category').value;
+    const notes = document.getElementById('notes').value.trim();
+
+    if (!taskName) { showToast('Enter a task name first', true); return; }
+    if (!token || !dbId) { showToast('Set up your Notion connection first', true); return; }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+
+    const payload = {
+      parent: { database_id: dbId.replace(/-/g, '') },
+      properties: {
+        Task: { title: [{ text: { content: taskName } }] },
+        ...(category && { Category: { select: { name: category } } }),
+        ...(selectedPriority && { Priority: { select: { name: selectedPriority } } }),
+        ...(notes && { Notes: { rich_text: [{ text: { content: notes } }] } }),
+      }
+    };
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `Make a POST request to the Notion API to create a task. Use this exact payload: ${JSON.stringify(payload)}. The Notion API token is: ${token}. Make the request to https://api.notion.com/v1/pages with headers Content-Type: application/json, Authorization: Bearer ${token}, Notion-Version: 2022-06-28. Return only "SUCCESS" if the request returns a 200 status, or "ERROR: " followed by the error message if it fails.`
+          }]
+        })
+      });
+
+      const data = await res.json();
+      const responseText = data.content?.[0]?.text || '';
+
+      if (responseText.includes('SUCCESS')) {
+        showToast('✅ Task added to Notion');
+        clearForm();
+      } else {
+        // Try direct Notion API
+        await directNotionCall(payload, token);
+      }
+    } catch(e) {
+      // Fallback: save to offline queue
+      saveToQueue({ taskName, category, priority: selectedPriority, notes, timestamp: new Date().toISOString() });
+      showToast('📥 Saved offline — sync when connected');
+      clearForm();
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Add to Notion';
+  }
+
+  async function directNotionCall(payload, token) {
+    try {
+      const res = await fetch('https://api.notion.com/v1/pages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Notion-Version': '2022-06-28'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        showToast('✅ Task added to Notion');
+        clearForm();
+      } else {
+        const err = await res.json();
+        showToast('Error: ' + (err.message || 'Check your token and database ID'), true);
+      }
+    } catch(e) {
+      saveToQueue({ taskName: payload.properties.Task.title[0].text.content, timestamp: new Date().toISOString() });
+      showToast('📥 Saved offline — sync when connected');
+      clearForm();
+    }
+
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').textContent = 'Add to Notion';
+  }
+
+  function saveToQueue(task) {
+    offlineQueue.push(task);
+    localStorage.setItem('notionQueue', JSON.stringify(offlineQueue));
+    updateQueueDisplay();
+  }
+
+  function updateQueueDisplay() {
+    const section = document.getElementById('queueSection');
+    const list = document.getElementById('queueList');
+    const count = document.getElementById('queueCount');
+
+    if (offlineQueue.length === 0) {
+      section.style.display = 'none';
+      return;
+    }
+
+    section.style.display = 'block';
+    count.textContent = offlineQueue.length;
+    list.innerHTML = offlineQueue.map((t, i) => `
+      <div class="queue-item">
+        <div>
+          <div class="queue-item-name">${t.taskName}</div>
+          <div class="queue-item-meta">${t.category || 'No category'} · ${t.priority || 'Medium'} · ${new Date(t.timestamp).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function syncQueue() {
+    const token = localStorage.getItem('notionToken');
+    const dbId = localStorage.getItem('notionDbId');
+    if (!token || !dbId) { showToast('Set up Notion connection first', true); return; }
+
+    let synced = 0;
+    const remaining = [];
+
+    for (const task of offlineQueue) {
+      try {
+        const payload = {
+          parent: { database_id: dbId.replace(/-/g, '') },
+          properties: {
+            Task: { title: [{ text: { content: task.taskName } }] },
+            ...(task.category && { Category: { select: { name: task.category } } }),
+            ...(task.priority && { Priority: { select: { name: task.priority } } }),
+            ...(task.notes && { Notes: { rich_text: [{ text: { content: task.notes } }] } }),
+          }
+        };
+
+        const res = await fetch('https://api.notion.com/v1/pages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'Notion-Version': '2022-06-28'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) synced++;
+        else remaining.push(task);
+      } catch(e) {
+        remaining.push(task);
+      }
+    }
+
+    offlineQueue = remaining;
+    localStorage.setItem('notionQueue', JSON.stringify(offlineQueue));
+    updateQueueDisplay();
+    showToast(`✅ Synced ${synced} task${synced !== 1 ? 's' : ''} to Notion`);
+  }
+</script>
+</body>
+</html>
