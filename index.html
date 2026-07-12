@@ -443,6 +443,18 @@
     </div>
 
     <div class="field">
+      <label>Task Type</label>
+      <select id="taskType">
+        <option value="">— Select type —</option>
+        <option value="In The Business">In The Business</option>
+        <option value="On The Business">On The Business</option>
+        <option value="Action Item">Action Item</option>
+        <option value="Project Task">Project Task</option>
+        <option value="Ad Hoc">Ad Hoc</option>
+      </select>
+    </div>
+
+    <div class="field">
       <label>Priority</label>
       <div class="priority-row">
         <button class="priority-btn" data-value="High" onclick="selectPriority(this)">🔴 High</button>
@@ -577,6 +589,7 @@
     document.getElementById('taskName').value = '';
     document.getElementById('deptSelect').value = '';
     document.getElementById('category').value = '';
+    document.getElementById('taskType').value = '';
     document.getElementById('dueDate').value = '';
     document.getElementById('notes').value = '';
     document.querySelectorAll('.priority-btn').forEach(b => b.classList.remove('selected'));
@@ -585,7 +598,7 @@
     document.getElementById('taskName').focus();
   }
 
-  function buildPayload(dbId, taskName, deptName, category, priority, assignedDate, dueDate, notes) {
+  function buildPayload(dbId, taskName, deptName, category, taskType, priority, assignedDate, dueDate, notes) {
     const deptId = DEPT_IDS[deptName];
     return {
       parent: { database_id: dbId.replace(/-/g, '') },
@@ -593,6 +606,7 @@
         Task: { title: [{ text: { content: taskName } }] },
         ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
         ...(category && { Category: { select: { name: category } } }),
+        ...(taskType && { "Task Type": { select: { name: taskType } } }),
         ...(priority && { Priority: { select: { name: priority } } }),
         ...(assignedDate && { "Assigned Date": { date: { start: assignedDate } } }),
         ...(dueDate && { "Due Date": { date: { start: dueDate } } }),
@@ -617,6 +631,7 @@
     const taskName = document.getElementById('taskName').value.trim();
     const deptName = document.getElementById('deptSelect').value;
     const category = document.getElementById('category').value;
+    const taskType = document.getElementById('taskType').value;
     const dueDate = document.getElementById('dueDate').value;
     const notes = document.getElementById('notes').value.trim();
 
@@ -627,7 +642,7 @@
     btn.disabled = true;
     btn.textContent = 'Adding...';
 
-    const payload = buildPayload(dbId, taskName, deptName, category, selectedPriority, todayISO, dueDate, notes);
+    const payload = buildPayload(dbId, taskName, deptName, category, taskType, selectedPriority, todayISO, dueDate, notes);
 
     try {
       const res = await callNotion('pages', payload);
@@ -640,7 +655,7 @@
         showToast('Error: ' + (data.message || 'Check your token and database ID'), true);
       }
     } catch(e) {
-      saveToQueue({ taskName, deptName, category, priority: selectedPriority, assignedDate: todayISO, dueDate, notes, timestamp: new Date().toISOString() });
+      saveToQueue({ taskName, deptName, category, taskType, priority: selectedPriority, assignedDate: todayISO, dueDate, notes, timestamp: new Date().toISOString() });
       showToast('📥 Saved offline — sync when connected');
       clearForm();
     }
@@ -697,7 +712,7 @@
 
     for (const task of offlineQueue) {
       try {
-        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.priority, task.assignedDate, task.dueDate, task.notes);
+        const payload = buildPayload(dbId, task.taskName, task.deptName, task.category, task.taskType, task.priority, task.assignedDate, task.dueDate, task.notes);
         const res = await callNotion('pages', payload);
         if (res.ok) synced++;
         else remaining.push(task);
