@@ -606,7 +606,7 @@
         Task: { title: [{ text: { content: taskName } }] },
         ...(deptId && { Dept: { relation: [{ id: deptId }] } }),
         ...(category && { Category: { select: { name: category } } }),
-        ...(taskType && { "Task Type": { select: { name: taskType } } }),
+        ...(taskType && { "Type": { select: { name: taskType } } }),
         ...(priority && { Priority: { select: { name: priority } } }),
         ...(assignedDate && { "Assigned Date": { date: { start: assignedDate } } }),
         ...(dueDate && { "Due Date": { date: { start: dueDate } } }),
